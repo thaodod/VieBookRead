@@ -1,2 +1,5 @@
 test*.jpg
 test*.png
+data/*
+__pycache__/
+*.csv
