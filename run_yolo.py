@@ -44,7 +44,7 @@ def parse_args():
     parser.add_argument(
         'text',
         help=
-        'text prompts, including categories separated by a comma or a txt file with each line as a prompt.'
+        'text prompts: painting,map,stamp '
     )
     parser.add_argument('--topk',
                         default=100,

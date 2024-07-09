@@ -3,3 +3,4 @@ test*.png
 data/*
 __pycache__/
 *.csv
+test_imgs/*
