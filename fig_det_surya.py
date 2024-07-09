@@ -1,5 +1,4 @@
 import argparse
-import copy
 import json
 import gc
 from collections import defaultdict
@@ -13,20 +12,9 @@ from surya.settings import settings
 import os
 
 
-def process_batch(images, names, det_model, det_processor, model, processor, args, result_path):
+def process_batch(images, names, det_model, det_processor, model, processor):
     line_predictions = batch_text_detection(images, det_model, det_processor, batch_size=8)
     layout_predictions = batch_layout_detection(images, model, processor, line_predictions, batch_size=8)
-
-    if args.images:
-        for idx, (image, layout_pred, name) in enumerate(zip(images, layout_predictions, names)):
-            polygons = [p.polygon for p in layout_pred.bboxes]
-            labels = [p.label for p in layout_pred.bboxes]
-            bbox_image = draw_polys_on_image(polygons, copy.deepcopy(image), labels=labels)
-            bbox_image.save(os.path.join(result_path, f"{name}_{idx}_layout.png"))
-
-            if args.debug:
-                heatmap = layout_pred.segmentation_map
-                heatmap.save(os.path.join(result_path, f"{name}_{idx}_segmentation.png"))
 
     predictions_by_page = defaultdict(list)
     for idx, (pred, name, image) in enumerate(zip(layout_predictions, names, images)):
@@ -42,8 +30,6 @@ def main():
     parser.add_argument("input_path", type=str, help="Path to pdf or image file or folder to detect layout in.")
     parser.add_argument("--results_dir", type=str, help="Path to JSON file with layout results.", default=os.path.join(settings.RESULT_DIR, "surya"))
     parser.add_argument("--max", type=int, help="Maximum number of pages to process.", default=None)
-    parser.add_argument("--images", action="store_true", help="Save images of detected layout bboxes.", default=False)
-    parser.add_argument("--debug", action="store_true", help="Run in debug mode.", default=False)
     args = parser.parse_args()
 
     model = load_model(checkpoint=settings.LAYOUT_MODEL_CHECKPOINT)
@@ -57,7 +43,7 @@ def main():
     all_predictions = defaultdict(list)
 
     if os.path.isdir(args.input_path):
-        image_files = [os.path.join(args.input_path, fname) for fname in os.listdir(args.input_path) if fname.lower().endswith(('.png', '.jpg'))]
+        image_files = [os.path.join(args.input_path, fname) for fname in os.listdir(args.input_path) if fname.lower().endswith(('.jpg'))]
     else:
         image_files = [args.input_path]
 
@@ -71,7 +57,7 @@ def main():
             batch_images.extend(images)
             batch_names.extend(names)
 
-        batch_predictions = process_batch(batch_images, batch_names, det_model, det_processor, model, processor, args, result_path)
+        batch_predictions = process_batch(batch_images, batch_names, det_model, det_processor, model, processor)
         for name, preds in batch_predictions.items():
             all_predictions[name].extend(preds)
 
