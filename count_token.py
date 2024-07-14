@@ -1,52 +1,54 @@
+import argparse
 import tiktoken
+from lxml.html.clean import Cleaner
+from lxml.html import tostring, fromstring
 
 # Initialize the tokenizer
-# tokenizer = tiktoken.get_encoding("cl100k_base")
 tokenizer = tiktoken.encoding_for_model("gpt-3.5-turbo")
 
-# The provided HTML content
-html_content = '''
-<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
-  <head>
-    <title>Inconnu(e)</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-  <link href="stylesheet.css" rel="stylesheet" type="text/css"/>
-<link href="page_styles.css" rel="stylesheet" type="text/css"/>
-</head>
-  <body class="calibre">
-<h1 id="id_Toc498587533" class="block_17" lang="vi">MẤY CÂU CA TOÀN THỂ CẢ NƯỚC</h1>
-	<p class="block_18" lang="vi">Nước ta hình thế bốn phương,</p>
-	<p class="block_18" lang="vi">Ba mươi vạn lẻ dậm vuông quy vào.</p>
-	<p class="block_18" lang="vi">Bắc thời giáp đất nước Tầu,</p>
-	<p class="block_18" lang="vi">Đông, Nam, giáp bể, Tây, Lào với Man.</p>
-	<p class="block_18" lang="vi">Cứ trong các tỉnh mà bàn,</p>
-	<p class="block_18" lang="vi">Bắc hai mươi ba giang san chuyên thành.</p>
-	<p class="block_18" lang="vi">Đôi nơi thành-phố đã đành,</p>
-	<p class="block_18" lang="vi">Lại thêm ba đạo ở vành xa kia.</p>
-	<p class="block_18"><span lang="vi" class="calibre2">Núi Phan-Păng </span><sup lang="vi" class="calibre4"><a href="index_split_057.html#note_1" title="1" class="noteref"><sup id="back_note_1" class="calibre5">1</sup></a></sup><span lang="vi" class="calibre2"> nhất Bắc-Kỳ,</span></p>
-	<p class="block_18" lang="vi">Hơn ba nghìn thước đâu bì được cao.</p>
-	<p class="block_18" lang="vi">Tản-Viên, Tam-Đảo thế nào,</p>
-	<p class="block_18" lang="vi">Ngoài một nghìn thước cũng vào bực hơn.</p>
-	<p class="block_18" lang="vi">Biết bao các ngả sông con,</p>
-	<p class="block_18" lang="vi">Thái-Bình, Nhị-Thủy đại xuyên hai giòng,</p>
-	<p class="block_18" lang="vi">Trung-Kỳ thành-phố một vùng,</p>
-	<p class="block_18" lang="vi">Mười hai tỉnh lỵ ở cùng cong cong.</p>
-	<p class="block_18" lang="vi">Mã-giang giài nhất các sông,</p>
-	<p class="block_18" lang="vi">Linh-giang thời rộng và cùng Lam-giang.</p>
-	<p class="block_18" lang="vi">Tam-phong ở đất Nha-Trang,</p>
-	<p class="block_18" lang="vi">Đo ra mới biết núi càng là cao.</p>
-	<p class="block_18" lang="vi">Đến như duyên-cách thế nào,</p>
-	<p class="block_18" lang="vi">Diễn ra từng tỉnh chép vào nhời ca.</p>
-	<p class="block_18" lang="vi">Trong Nam các tỉnh đặt ra,</p>
-	<p class="block_18"><span lang="vi" class="calibre2">Đời vua Minh-Mệnh mười ba đó mà. </span><sup lang="vi" class="calibre4"><a href="index_split_058.html#note_2" title="2" class="noteref"><sup id="back_note_2" class="calibre5">2</sup></a></sup></p>
-	<p class="block_18" lang="vi">Còn như các tỉnh Bắc-hà,</p>
-	<p class="block_18" lang="vi">Chừng năm thập nhị ấy là kỷ-niên.</p>
-	<p class="block_18" lang="vi">Dẫu rằng thành quách biến thiên,</p>
-	<p class="block_18" lang="vi">Vẫn là Hồng-Lạc dõi truyền đến nay.</p>
-	<p class="block_18" lang="vi">Rõ ràng tổ-quốc là đây,</p>
-	<p class="block_18" lang="vi">Người ta nên biết sự này trước tiên.</p>
-	</body></html>
-'''
+def clean_class(html_content):
+    html = fromstring(html_content)
+    # Remove class attribute from all elements
+    for tag in html.xpath("//*[@class]"):
+        tag.attrib.pop("class")
+    # Remove lang attribute from all elements
+    for tag in html.xpath("//*[@lang]"):
+        tag.attrib.pop("lang")
+    
+    return tostring(html, encoding="unicode", method="html")
 
 
-print("number of token by tiktoken: ", len(tokenizer.encode(html_content)))
+def load_html_as_text(file_path):
+    with open(file_path, "r", encoding="utf-8") as file:
+        content = file.read()
+        if content.lstrip().startswith("<?xml version="):
+            content = "\n".join(content.split("\n")[1:])
+
+        cleaner = Cleaner(
+            page_structure=False,
+            meta=True,
+            embedded=True,
+            style=True,
+            processing_instructions=True,
+            inline_style=True,
+            scripts=True,
+            javascript=True,
+            comments=True,
+            frames=True,
+            forms=True,
+            annoying_tags=True,
+            remove_unknown_tags=True,
+        )
+        return clean_class(cleaner.clean_html(content))
+
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("source", help="pick html file")
+    args = parser.parse_args()
+    html_content = load_html_as_text(args.source)
+    print("number of token: ", len(tokenizer.encode(html_content)))
+
+
+if __name__ == "__main__":
+    main()
