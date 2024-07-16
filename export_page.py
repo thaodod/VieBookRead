@@ -2,7 +2,6 @@ import fitz  # PyMuPDF
 import os
 import csv
 from PIL import Image
-import io
 
 RESOL = 216
 
