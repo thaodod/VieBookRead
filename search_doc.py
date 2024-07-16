@@ -6,13 +6,13 @@ from util.lang_detect import is_meaning_text
 import json
 
 
-def search_html_files(directory, query, threshold=70, block_size=4, padding=1):
+def search_html_files(directory, query, threshold=80, block_size=4):
     # List all HTML files in the directory
     html_files = [
         f for f in os.listdir(directory) if f.endswith((".html", ".xhtml", ".htm"))
     ]
 
-    match_files = []
+    matching_files = []
 
     for html_file in html_files:
         # Read the content of the HTML file
@@ -39,33 +39,38 @@ def search_html_files(directory, query, threshold=70, block_size=4, padding=1):
                 "caption",
                 "pre",
             ]
-        )  # Common tags containing text
+        )
 
         # Store the matching blocks with their scores and HTML
-        matched_blocks = []
+        matching_blocks = []
 
         # Calculate similarity scores for blocks of paragraphs
-        for i in range(0, len(paragraphs), block_size):
+        num_paragraphs = len(paragraphs)
+        for i in range(num_paragraphs - block_size + 1):
             block = paragraphs[i : i + block_size]
             block_text = " ".join(paragraph.get_text() for paragraph in block)
             score = fuzz.partial_ratio(query, block_text)
             if score >= threshold:
-                # Get the padded block
-                start = max(0, i - padding)
-                end = min(len(paragraphs), i + block_size + padding)
-                padded_block = paragraphs[start:end]
-                block_html = "".join(str(paragraph) for paragraph in padded_block)
-                matched_blocks.append((block_html, score))
+                # Find the positions of the start and end of the block in the original HTML
+                start_pos = content.find(str(block[0]))
+                end_pos = content.find(str(block[-1])) + len(str(block[-1]))
+                block_html = content[start_pos:end_pos]
 
-        if matched_blocks:
+                # Ensure the block contains meaningful content
+                if fuzz.partial_ratio(query, block_html) >= threshold:
+                    matching_blocks.append((block_html, score))
+
+        if matching_blocks:
             # Calculate the average score for the document
-            avg_score = sum(score for _, score in matched_blocks) / len(matched_blocks)
-            match_files.append((html_file, avg_score, matched_blocks))
+            average_score = sum(score for _, score in matching_blocks) / len(
+                matching_blocks
+            )
+            matching_files.append((html_file, average_score, matching_blocks))
 
     # Sort the matching files by their average score in descending order
-    match_files.sort(key=lambda x: x[1], reverse=True)
+    matching_files.sort(key=lambda x: x[1], reverse=True)
 
-    return match_files
+    return matching_files
 
 
 def load_json(file_path):
@@ -94,6 +99,7 @@ def main():
         para_text = para["content"]
         if not is_meaning_text(para_text):
             print("skip this query: ", para_text)
+            print("=============================")
             continue
         print("query: ", para_text)
         match_files = search_html_files(args.source, para_text)
@@ -102,8 +108,11 @@ def main():
             print("Ranked files:")
             for file, score, blocks in match_files:
                 print(f"\nFile: {file}\nAverage Score: {score}")
-                for block_html, b_score in blocks:
-                    print(f"Score: {b_score}\nHTML: \n{block_html}\n")
+                block_html, _ = next(
+                    iter(blocks[2:]), next(iter(blocks[1:]), blocks[0])
+                )
+
+                print(f"HTML: \n{block_html}\n")
         else:
             print("No matching found.")
 
