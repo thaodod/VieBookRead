@@ -2,7 +2,7 @@ import argparse
 import os
 from bs4 import BeautifulSoup
 from fuzzywuzzy import fuzz
-from util.lang_detect import is_meaning_text
+from util.lang_detect import is_meaning_str
 import json
 
 
@@ -97,7 +97,7 @@ def main():
     para_list = load_json(args.json)
     for para in para_list:
         para_text = para["content"]
-        if not is_meaning_text(para_text):
+        if not is_meaning_str(para_text):
             print("skip this query: ", para_text)
             print("=============================")
             continue
@@ -108,9 +108,7 @@ def main():
             print("Ranked files:")
             for file, score, blocks in match_files:
                 print(f"\nFile: {file}\nAverage Score: {score}")
-                block_html, _ = next(
-                    iter(blocks[2:]), next(iter(blocks[1:]), blocks[0])
-                )
+                block_html, _ = next(iter(blocks[1:]), blocks[0])
 
                 print(f"HTML: \n{block_html}\n")
         else:

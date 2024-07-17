@@ -8,6 +8,7 @@ client = OpenAI(
 
 # Define the prompt/question you want to ask
 prompt = """
+Given an html content as below:
 <html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr">
   <head>
     <title>Inconnu(e)</title>
@@ -64,12 +65,12 @@ prompt = """
 
 Then I provide a text which needs to be corrected as its content predicted from non-perfect OCR tool. Please use html content as reference source to correct below input text:
 <input-text>
-Pồi ra lệnh lập số hộ-tịch bắt người trong nước cứ từ hai tuổi trỏ lên là phải biên tên vào số, mụ - cđích kiểm-soát nhân - số, phòng khi
+Dồi ra lệnh lập số hộ-tịch bắt người trong nước cứ từ hai tuổi trỏ lên là phải biên tên vào số, mụ - cđích kiểm-soát nhân - số, phòng khi
 </input-text>
 
 Strictly keep the orthography (and punctuation) of the reference, only correct based on what existed on input text carefully.
-First word of the text might be also typo too, pay attention to all letters.
-Answer corrected text only.
+First word of the text could also be typo too, check all words and letters carefully equally.
+Answer corrected text, important: Give only the processed result, without any explanations, formatting or XML-like tag.
 """
 
 # Call the OpenAI API to generate the corrected text
@@ -85,4 +86,4 @@ response = client.chat.completions.create(
     temperature=0.0
 )
 
-print(response.choices[0].message)
+print(response.choices[0].message.content)

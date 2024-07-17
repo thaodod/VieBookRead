@@ -3,6 +3,8 @@ import tiktoken
 from lxml.html.clean import Cleaner
 from lxml.html import tostring, fromstring
 
+def contain_alpha_num(s):
+    return any(c.isalpha() or c.isdigit() for c in s)
 
 def clean_class(html_content):
     html = fromstring(html_content)

@@ -1,8 +1,7 @@
 from anthropic import AnthropicVertex
 
 PROMPT = """
-Given an html file:
-
+Given an html content:
 <html xmlns="http://www.w3.org/1999/xhtml" lang="fr" xml:lang="fr">
   <head>
     <title>Inconnu(e)</title>
@@ -89,12 +88,14 @@ Given an html file:
 	<p class="block_18"><span lang="vi">Và chính bởi thế mà họ Hồ thất bại, chớ họ Hồ không thất bại vì đã cướp ngôi nhà Trần, như ý ông Trần-trọng-Kim muốn nói trong « Việt-Nam Sử-lược</span> »<span lang="vi">.</span></p>
 	</body></html>
 
-Then I provide a text which needs to be corrected as its content predicted from non-perfect OCR tool. Please use html content as reference source to correct below input text:
+Then I provide a text which needs to be corrected as it is predicted from imperfect OCR tool. Use html content as reference source to correct below input text:
 <input-text>
-Rồi ra lệnh lập số hộ-tịch bắt người trong nước cứ từ hai tuổi trở lên là phải biên tên vào số, mụ - cđích kiểm-soát nhân - số, phòng khi
+Dồi ra lệnh lập số hộ-tịch bắt người trong nước cứ từ hai tuổi trở lên là phải biên tên vào số, mụ - cđích kiểm-soát nhân - số, phòng khi
 </input-text>
 
-Strictly keep the orthography (and punctuation) of the reference, only correct based on what existed on input text carefully. Answer only corrected text.
+Strictly keep the orthography (and punctuation) of the reference, only correct based on what existed on input text carefully.
+First word of the text could also be typo too, check all words and letters carefully equally.
+Answer corrected text, important: Give only the processed result, without any explanations, formatting or XML-like tag.
 """
 
 LOCATION="us-central1" # or "europe-west4"
@@ -112,4 +113,4 @@ message = client.messages.create(
   max_tokens=1024,
   temperature=0.0
 )
-print(message.model_dump_json(indent=2))
+print(message.content[0].text)

@@ -3,7 +3,7 @@ import unicodedata
 import math
 
 
-def is_meaning_text(
+def is_meaning_str(
     text,
     languages=["en", "es", "fr", "de", "vi", "zh-tw", "zh-cn"],
     min_length=5,
