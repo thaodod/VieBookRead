@@ -78,5 +78,8 @@ def text_correct(ref_html, para, mode='gpt3'):
             print(f"An unexpected error occurred: {e}")
             return None
         
+    elif mode == 'test':
+        return "testing mode enabled"
+        
     else:
         raise ValueError("invalid mode, only gpt3 gpt4 or haiku")
