@@ -9,7 +9,12 @@ from text_match import text_correct  # call LLM here.
 import json
 
 
-def search_html_files(directory, query, threshold=60, block_size=4):
+def render_block(block_html):
+    mini_soup = BeautifulSoup(block_html, "html.parser")
+    return mini_soup.get_text()
+
+
+def search_html_files(directory, query, threshold=60, block_size=5):
     # List all HTML files in the directory
     html_files = [
         f for f in os.listdir(directory) if f.endswith((".html", ".xhtml", ".htm"))
@@ -19,7 +24,7 @@ def search_html_files(directory, query, threshold=60, block_size=4):
 
     for html_file in html_files:
         with open(os.path.join(directory, html_file), "r", encoding="utf-8") as file:
-            content = file.read()
+            content = clean_html_txt(file.read())
 
         # Parse the HTML content
         soup = BeautifulSoup(content, "html.parser")
@@ -58,9 +63,10 @@ def search_html_files(directory, query, threshold=60, block_size=4):
                 start_pos = content.find(str(block[0]))
                 end_pos = content.find(str(block[-1])) + len(str(block[-1]))
                 block_html = content[start_pos:end_pos]
+                blk_html_txt = render_block(block_html)
 
-                # Ensure the block contains meaningful content
-                if fuzz.partial_ratio(query.lower(), block_html.lower()) >= threshold:
+                # Validate the block content contains matched query
+                if fuzz.partial_ratio(query.lower(), blk_html_txt.lower()) >= threshold:
                     matching_blocks.append((block_html, score))
 
         if matching_blocks:
@@ -119,7 +125,7 @@ def main():
                 _, _, blocks0 = match_files[0]
                 block_html, _ = next(iter(blocks0[1:]), blocks0[0])
 
-                simple_html = clean_html_txt(complete_html(block_html))
+                simple_html = complete_html(block_html)
                 correct_para = text_correct(simple_html, para_text, args.m)
 
                 if correct_para:
