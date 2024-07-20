@@ -39,20 +39,3 @@ def is_meaning_str(
 
     # If entropy is below the threshold, consider it random
     return entropy > entropy_threshold
-
-
-# # Example usage
-# texts = [
-#     "This is a meaningful English sentence.",
-#     "Esta es una frase significativa en español.",
-#     "Dies ist ein bedeutungsvoller deutscher Satz.",
-#     "Ceci est une phrase française significative.",
-#     "Đây là một câu tiếng Việt có ý nghĩa.",
-#     "這是一個有意義的繁體中文句子。",
-#     "Thisisarandomstringwithoutspaces",
-#     "asdfghjklqwertyuiop",
-#     "aaaaaaaaaaaaaaaaaaa",
-#     "這個段落沒有意義",
-#     ":",
-#     "- 50 -"
-# ]

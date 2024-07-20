@@ -14,6 +14,21 @@ def render_block(block_html):
     return mini_soup.get_text()
 
 
+def extract_elements(soup):
+    body = soup.find('body')
+    if not body:
+        return []
+
+    def is_target_element(tag):
+        if tag.name in ["p", "div", "span", "li", "h1", "h2", "h3", "h4", "h5", "h6",
+                        "td", "th", "caption", "pre"]:
+            return True
+        if tag.name == 'a' and tag.parent == body:
+            return True
+        return False
+
+    return body.find_all(is_target_element, recursive=False)
+
 def search_html_files(directory, query, threshold=60, block_size=5):
     # List all HTML files in the directory
     html_files = [
@@ -28,25 +43,7 @@ def search_html_files(directory, query, threshold=60, block_size=5):
 
         # Parse the HTML content
         soup = BeautifulSoup(content, "html.parser")
-        paragraphs = soup.find_all(
-            [
-                "p",
-                "div",
-                "span",
-                "li",
-                "h1",
-                "h2",
-                "h3",
-                "h4",
-                "h5",
-                "h6",
-                "a",
-                "td",
-                "th",
-                "caption",
-                "pre",
-            ]
-        )
+        paragraphs = extract_elements(soup)
 
         # Store the matching blocks with their scores and HTML
         matching_blocks = []
