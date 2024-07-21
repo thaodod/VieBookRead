@@ -9,7 +9,7 @@ from text_match import text_correct  # call LLM here.
 import json
 
 
-def render_block(block_html):
+def render_blk(block_html):
     mini_soup = BeautifulSoup(block_html, "html.parser")
     return mini_soup.get_text()
 
@@ -22,7 +22,6 @@ def extract_elements(soup):
     def is_target_element(tag):
         if tag.name in [
             "p",
-            "div",
             "span",
             "li",
             "h1",
@@ -40,9 +39,14 @@ def extract_elements(soup):
             return True
         if tag.name == "a" and tag.parent == body:
             return True
+        if tag.name == 'div':
+            # Check if div contains only text nodes
+            return all(isinstance(child, str) and child.strip() 
+                       for child in tag.contents 
+                       if child is not None)
         return False
 
-    return body.find_all(is_target_element, recursive=False)
+    return body.find_all(is_target_element, recursive=True)
 
 
 def search_html_files(directory, query, threshold=60, block_size=5):
@@ -58,12 +62,11 @@ def search_html_files(directory, query, threshold=60, block_size=5):
         with open(os.path.join(directory, html_file), "r", encoding="utf-8") as file:
             content = clean_html_txt(file.read())
 
-        # Parse the HTML content
         soup = BeautifulSoup(content, "html.parser")
         paragraphs = extract_elements(soup)
 
-        # Store the matching blocks with their scores and HTML
-        matching_blocks = []
+        # Store the matched blocks with their scores and HTML
+        matched_blks = []
 
         num_paragraphs = len(paragraphs)
         if num_paragraphs < curr_blk_size:
@@ -73,24 +76,23 @@ def search_html_files(directory, query, threshold=60, block_size=5):
             block_text = " ".join(paragraph.get_text() for paragraph in block)
             score = fuzz.partial_ratio(query.lower(), block_text.lower())
             if score >= threshold:
-                # Find the positions of the start and end of the block in the original HTML
+                # Find positions of start & end of the block in original HTML
                 start_pos = content.find(str(block[0]))
                 end_pos = content.find(str(block[-1])) + len(str(block[-1]))
                 block_html = content[start_pos:end_pos]
-                blk_html_txt = render_block(block_html)
+                blk_html_txt = render_blk(block_html)
+                val_score = fuzz.partial_ratio(query.lower(), blk_html_txt.lower())
 
                 # Validate the block content contains matched query
-                if fuzz.partial_ratio(query.lower(), blk_html_txt.lower()) >= threshold:
-                    matching_blocks.append((block_html, score))
+                if  val_score >= threshold:
+                    matched_blks.append((block_html, val_score))
 
-        if matching_blocks:
+        if matched_blks:
             # Calculate the average score for the document
-            average_score = sum(score for _, score in matching_blocks) / len(
-                matching_blocks
-            )
-            matching_files.append((html_file, average_score, matching_blocks))
+            avg_score = sum(score for _, score in matched_blks) / len(matched_blks)
+            matching_files.append((html_file, avg_score, matched_blks))
 
-    # Sort the matching files by their average score in descending order
+    # Sort matched files by their avg score in descending order
     matching_files.sort(key=lambda x: x[1], reverse=True)
 
     return matching_files
