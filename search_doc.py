@@ -15,19 +15,35 @@ def render_block(block_html):
 
 
 def extract_elements(soup):
-    body = soup.find('body')
+    body = soup.find("body")
     if not body:
         return []
 
     def is_target_element(tag):
-        if tag.name in ["p", "div", "span", "li", "h1", "h2", "h3", "h4", "h5", "h6",
-                        "td", "th", "caption", "pre"]:
+        if tag.name in [
+            "p",
+            "div",
+            "span",
+            "li",
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+            "td",
+            "th",
+            "caption",
+            "pre",
+            "dl",
+        ]:
             return True
-        if tag.name == 'a' and tag.parent == body:
+        if tag.name == "a" and tag.parent == body:
             return True
         return False
 
     return body.find_all(is_target_element, recursive=False)
+
 
 def search_html_files(directory, query, threshold=60, block_size=5):
     # List all HTML files in the directory
@@ -38,6 +54,7 @@ def search_html_files(directory, query, threshold=60, block_size=5):
     matching_files = []
 
     for html_file in html_files:
+        curr_blk_size = block_size
         with open(os.path.join(directory, html_file), "r", encoding="utf-8") as file:
             content = clean_html_txt(file.read())
 
@@ -49,10 +66,10 @@ def search_html_files(directory, query, threshold=60, block_size=5):
         matching_blocks = []
 
         num_paragraphs = len(paragraphs)
-        if num_paragraphs < block_size:
-            block_size = num_paragraphs
-        for i in range(num_paragraphs - block_size + 1):
-            block = paragraphs[i : i + block_size]
+        if num_paragraphs < curr_blk_size:
+            curr_blk_size = num_paragraphs
+        for i in range(num_paragraphs - curr_blk_size + 1):
+            block = paragraphs[i : i + curr_blk_size]
             block_text = " ".join(paragraph.get_text() for paragraph in block)
             score = fuzz.partial_ratio(query.lower(), block_text.lower())
             if score >= threshold:
