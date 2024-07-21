@@ -9,6 +9,17 @@ from text_match import text_correct  # call LLM here.
 import json
 
 
+def load_dir(dir):
+    html_files = [f for f in os.listdir(dir) if f.endswith((".html", ".xhtml", ".htm"))]
+    file_n_contents = []
+    for html_file in html_files:
+        with open(os.path.join(dir, html_file), "r", encoding="utf-8") as file:
+            content = clean_html_txt(file.read())
+        file_n_contents.append((html_file, content))
+
+    return file_n_contents
+
+
 def render_blk(block_html):
     mini_soup = BeautifulSoup(block_html, "html.parser")
     return mini_soup.get_text()
@@ -39,28 +50,23 @@ def extract_elements(soup):
             return True
         if tag.name == "a" and tag.parent == body:
             return True
-        if tag.name == 'div':
+        if tag.name == "div":
             # Check if div contains only text nodes
-            return all(isinstance(child, str) and child.strip() 
-                       for child in tag.contents 
-                       if child is not None)
+            return all(
+                isinstance(child, str) and child.strip()
+                for child in tag.contents
+                if child is not None
+            )
         return False
 
     return body.find_all(is_target_element, recursive=True)
 
 
-def search_html_files(directory, query, threshold=60, block_size=5):
-    # List all HTML files in the directory
-    html_files = [
-        f for f in os.listdir(directory) if f.endswith((".html", ".xhtml", ".htm"))
-    ]
+def search_html_files(f_content_pairs, query, threshold=60, block_size=5):
+    matched_files = []
 
-    matching_files = []
-
-    for html_file in html_files:
+    for html_file, content in f_content_pairs:
         curr_blk_size = block_size
-        with open(os.path.join(directory, html_file), "r", encoding="utf-8") as file:
-            content = clean_html_txt(file.read())
 
         soup = BeautifulSoup(content, "html.parser")
         paragraphs = extract_elements(soup)
@@ -84,18 +90,18 @@ def search_html_files(directory, query, threshold=60, block_size=5):
                 val_score = fuzz.partial_ratio(query.lower(), blk_html_txt.lower())
 
                 # Validate the block content contains matched query
-                if  val_score >= threshold:
+                if val_score >= threshold:
                     matched_blks.append((block_html, val_score))
 
         if matched_blks:
             # Calculate the average score for the document
             avg_score = sum(score for _, score in matched_blks) / len(matched_blks)
-            matching_files.append((html_file, avg_score, matched_blks))
+            matched_files.append((html_file, avg_score, matched_blks))
 
     # Sort matched files by their avg score in descending order
-    matching_files.sort(key=lambda x: x[1], reverse=True)
+    matched_files.sort(key=lambda x: x[1], reverse=True)
 
-    return matching_files
+    return matched_files
 
 
 def load_json(file_path):
@@ -119,6 +125,7 @@ def main():
     args = parser.parse_args()
 
     json_paths = glob.glob(os.path.join(args.json_dir, "*.json"))
+    file_content_pairs = load_dir(args.source)
 
     for in_js_path in json_paths:
         # each js_path is 1 json file.
@@ -134,7 +141,7 @@ def main():
                     para["status"] = "skip"
                 continue
 
-            match_files = search_html_files(args.source, para_text)
+            match_files = search_html_files(file_content_pairs, para_text)
 
             if match_files:
                 # highest sim score file is used to search
