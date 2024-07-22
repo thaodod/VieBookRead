@@ -77,7 +77,7 @@ def clean_html_txt(text):
         annoying_tags=True,
         remove_unknown_tags=True,
     )
-    return clean_nested(clean_class(cleaner.clean_html(text)))
+    return clean_class(cleaner.clean_html(text))
 
 
 def count_token(content):
@@ -86,22 +86,11 @@ def count_token(content):
     return len(tokenizer.encode(content))
 
 
-def complete_html(partial_html):
-    soup = BeautifulSoup(
-        '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body></body></html>',
-        "html.parser",
-    )
-
-    # Parse the partial HTML
-    partial_soup = BeautifulSoup(partial_html, "html.parser")
-
-    # Find all top-level elements in the partial HTML
-    top_level_eles = partial_soup.find_all(recursive=False)
-
-    for element in top_level_eles:
-        soup.body.append(element)
-
-    return soup.prettify()
+def compose_html(paragraphs):
+    para_txt = [str(paragraph) for paragraph in paragraphs]
+    para_txt = ' '.join(para_txt)
+    html_template = f"""<html><head><meta charset="UTF-8"></head><body>{para_txt}</body></html>"""
+    return html_template
 
 
 def main():

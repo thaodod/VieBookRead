@@ -2,9 +2,11 @@ import argparse
 import os
 import glob
 from bs4 import BeautifulSoup
-from fuzzywuzzy import fuzz
+from thefuzz import fuzz
+from thefuzz import process
 from util.lang_detect import is_meaning_str
-from util.count_token import clean_html_txt, complete_html, contain_alpha_num
+from util.count_token import clean_html_txt, compose_html, contain_alpha_num
+from util.extract_html import flatten_html
 from text_match import text_correct  # call LLM here.
 import json
 
@@ -20,85 +22,40 @@ def load_dir(dir):
     return file_n_contents
 
 
-def render_blk(block_html):
-    mini_soup = BeautifulSoup(block_html, "html.parser")
+def render_blk(paragraph):
+    mini_soup = BeautifulSoup(paragraph, "html.parser")
     return mini_soup.get_text()
 
 
-def extract_elements(soup):
-    body = soup.find("body")
-    if not body:
-        return []
-
-    def is_target_element(tag):
-        if tag.name in [
-            "p",
-            "span",
-            "li",
-            "h1",
-            "h2",
-            "h3",
-            "h4",
-            "h5",
-            "h6",
-            "td",
-            "th",
-            "caption",
-            "pre",
-            "dl",
-        ]:
-            return True
-        if tag.name == "a" and tag.parent == body:
-            return True
-        if tag.name == "div":
-            # Check if div contains only text nodes
-            return all(
-                isinstance(child, str) and child.strip()
-                for child in tag.contents
-                if child is not None
-            )
-        return False
-
-    return body.find_all(is_target_element, recursive=True)
-
-
-def search_html_files(f_content_pairs, query, threshold=60, block_size=5):
+def search_html_files(f_content_pairs, query, threshold=60, block_size=4):
     matched_files = []
 
-    for html_file, content in f_content_pairs:
+    for file, content in f_content_pairs:
         curr_blk_size = block_size
+        paragraphs = flatten_html(content)
 
-        soup = BeautifulSoup(content, "html.parser")
-        paragraphs = extract_elements(soup)
-
-        # Store the matched blocks with their scores and HTML
-        matched_blks = []
+        # Store the highest scored block with its score and HTML
+        highest_scored_block = None
+        highest_score = 0
 
         num_paragraphs = len(paragraphs)
         if num_paragraphs < curr_blk_size:
             curr_blk_size = num_paragraphs
         for i in range(num_paragraphs - curr_blk_size + 1):
             block = paragraphs[i : i + curr_blk_size]
-            block_text = " ".join(paragraph.get_text() for paragraph in block)
+            block_text = " ".join(render_blk(paragraph) for paragraph in block)
             score = fuzz.partial_ratio(query.lower(), block_text.lower())
-            if score >= threshold:
-                # Find positions of start & end of the block in original HTML
-                start_pos = content.find(str(block[0]))
-                end_pos = content.find(str(block[-1])) + len(str(block[-1]))
-                block_html = content[start_pos:end_pos]
-                blk_html_txt = render_blk(block_html)
-                val_score = fuzz.partial_ratio(query.lower(), blk_html_txt.lower())
+            score_o = fuzz.partial_ratio(query, block_text)
+            if score < score_o:
+                score = score_o
+            if score >= threshold and score > highest_score:
+                highest_scored_block = (block, score)
+                highest_score = score
 
-                # Validate the block content contains matched query
-                if val_score >= threshold:
-                    matched_blks.append((block_html, val_score))
+        if highest_scored_block:
+            matched_files.append((file, highest_score, highest_scored_block))
 
-        if matched_blks:
-            # Calculate the average score for the document
-            avg_score = sum(score for _, score in matched_blks) / len(matched_blks)
-            matched_files.append((html_file, avg_score, matched_blks))
-
-    # Sort matched files by their avg score in descending order
+    # Sort matched files by their score in descending order
     matched_files.sort(key=lambda x: x[1], reverse=True)
 
     return matched_files
@@ -146,9 +103,8 @@ def main():
             if match_files:
                 # highest sim score file is used to search
                 _, _, blocks0 = match_files[0]
-                block_html, _ = next(iter(blocks0[1:]), blocks0[0])
-
-                simple_html = complete_html(block_html)
+                block_cont, _ = blocks0
+                simple_html = compose_html(block_cont)
                 correct_para = text_correct(simple_html, para_text, args.m)
 
                 if correct_para:
