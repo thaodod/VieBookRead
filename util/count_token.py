@@ -3,6 +3,15 @@ from bs4 import BeautifulSoup
 import tiktoken
 from lxml.html.clean import Cleaner
 from lxml.html import tostring, fromstring
+import string
+import re
+
+
+def count_words(inp_string):
+    # Define punctuation characters, including the hyphen
+    punctuation = string.punctuation + "-"
+    no_punct = re.sub("[" + punctuation + "]", " ", inp_string)
+    return len(no_punct.split())
 
 
 def contain_alpha_num(s):
@@ -88,7 +97,7 @@ def count_token(content):
 
 def compose_html(paragraphs):
     para_txt = [str(paragraph) for paragraph in paragraphs]
-    para_txt = ' '.join(para_txt)
+    para_txt = " ".join(para_txt)
     html_template = f"""<html><head><meta charset="UTF-8"></head><body>{para_txt}</body></html>"""
     return html_template
 

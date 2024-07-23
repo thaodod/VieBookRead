@@ -14,6 +14,8 @@ from util.count_token import (
 from util.extract_html import flatten_html
 from text_match import text_correct  # call LLM here.
 import json
+from functools import partial
+import multiprocessing as mp
 
 
 def load_dir(dir):
@@ -85,6 +87,39 @@ def load_json(file_path):
         return None
 
 
+def proc_paragraph(para, file_content_pairs, args):
+    para_text = para["content"]
+    if not is_meaning_str(para_text) or count_words(para_text) <= 2:
+        if not contain_alpha_num(para_text) and len(para_text) < 5:
+            para["status"] = "invalid"
+        else:
+            para["status"] = "skip"
+        return para
+
+    match_files = search_html_files(file_content_pairs, para_text)
+
+    if match_files:
+        _, _, blocks0 = match_files[0]
+        block_cont, _ = blocks0
+        simple_html = compose_html(block_cont)
+        correct_para = text_correct(simple_html, para_text, args.m)
+
+        if correct_para:
+            para["content-fix"] = correct_para
+            para["status"] = "corrected"
+        else:
+            para["status"] = "try_again"
+
+        files, scores, _ = zip(*match_files)
+        para["search-doc"] = files
+        para["search-score"] = scores
+
+    else:
+        para["status"] = "not_found"
+
+    return para
+
+
 def main():
     parser = argparse.ArgumentParser(description="Search a folder ")
     parser.add_argument("source", help="dir to load all ref html files")
@@ -97,41 +132,20 @@ def main():
     json_paths = glob.glob(os.path.join(args.json_dir, "*.json"))
     file_content_pairs = load_dir(args.source)
 
+    def parallel_proc(para_list, f_c_pairs, args):
+        with mp.Pool(processes=5) as pool:
+            process_func = partial(
+                proc_paragraph, file_content_pairs=f_c_pairs, args=args
+            )
+            results = pool.map(process_func, para_list)
+        return results
+
     for in_js_path in json_paths:
         # each js_path is 1 json file.
         js_basename = os.path.basename(in_js_path)
         para_list = load_json(in_js_path)
 
-        for para in para_list:
-            para_text = para["content"]
-            if not is_meaning_str(para_text) or count_words(para_text) <= 2:
-                if not contain_alpha_num(para_text) and len(para_text) < 5:
-                    para["status"] = "invalid"
-                else:
-                    para["status"] = "skip"
-                continue
-
-            match_files = search_html_files(file_content_pairs, para_text)
-
-            if match_files:
-                # highest sim score file is used to search
-                _, _, blocks0 = match_files[0]
-                block_cont, _ = blocks0
-                simple_html = compose_html(block_cont)
-                correct_para = text_correct(simple_html, para_text, args.m)
-
-                if correct_para:
-                    para["content-fix"] = correct_para
-                    para["status"] = "corrected"
-                else:
-                    para["status"] = "try_again"
-
-                files, scores, _ = zip(*match_files)
-                para["search-doc"] = files
-                para["search-score"] = scores
-
-            else:
-                para["status"] = "not_found"
+        para_list = parallel_proc(para_list, file_content_pairs, args)
 
         if not os.path.exists(args.o):
             os.makedirs(args.o)
