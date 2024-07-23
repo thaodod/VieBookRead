@@ -21,10 +21,10 @@ def normalize_html_file(file_path):
 def normalize_html_files_in_directory(directory):
     for root, dirs, files in os.walk(directory):
         for file in files:
-            if file.endswith('.html'):
+            if file.endswith((".html", ".xhtml", ".htm")):
                 file_path = os.path.join(root, file)
                 normalize_html_file(file_path)
 
 if __name__ == '__main__':
-    root_directory = 'path/to/root_directory'
+    root_directory = 'D:\\DATA\\html_f'
     normalize_html_files_in_directory(root_directory)

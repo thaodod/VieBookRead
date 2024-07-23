@@ -28,7 +28,7 @@ def render_blk(paragraph):
     return mini_soup.get_text()
 
 
-def search_html_files(f_content_pairs, query, threshold=65, block_size=1):
+def search_html_files(f_content_pairs, query, threshold=68, block_size=3):
     matched_files = []
 
     for file, paragraphs in f_content_pairs:
