@@ -17,7 +17,8 @@ def load_dir(dir):
     for html_file in html_files:
         with open(os.path.join(dir, html_file), "r", encoding="utf-8") as file:
             content = clean_html_txt(file.read())
-        file_n_contents.append((html_file, content))
+            htm_para_s = flatten_html(content)
+        file_n_contents.append((html_file, htm_para_s))
 
     return file_n_contents
 
@@ -27,12 +28,11 @@ def render_blk(paragraph):
     return mini_soup.get_text()
 
 
-def search_html_files(f_content_pairs, query, threshold=60, block_size=4):
+def search_html_files(f_content_pairs, query, threshold=65, block_size=1):
     matched_files = []
 
-    for file, content in f_content_pairs:
+    for file, paragraphs in f_content_pairs:
         curr_blk_size = block_size
-        paragraphs = flatten_html(content)
 
         # Store the highest scored block with its score and HTML
         highest_scored_block = None
@@ -51,9 +51,14 @@ def search_html_files(f_content_pairs, query, threshold=60, block_size=4):
             if score >= threshold and score > highest_score:
                 highest_scored_block = (block, score)
                 highest_score = score
+            if highest_score > 95:  # no need to search more block
+                break
 
         if highest_scored_block:
             matched_files.append((file, highest_score, highest_scored_block))
+
+        if highest_score > 95:  # no need to search more file
+            break
 
     # Sort matched files by their score in descending order
     matched_files.sort(key=lambda x: x[1], reverse=True)
