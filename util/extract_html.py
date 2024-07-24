@@ -44,7 +44,7 @@ def flatten_html(html_content):
         if isinstance(element, NavigableString):
             current_paragraph.append(str(element))
         elif isinstance(element, Tag):
-            if element.name in ["br", "p", "div", "li"] or element.name in [
+            if element.name in ["br", "p", "div", "li", "aside"] or element.name in [
                 "h1",
                 "h2",
                 "h3",

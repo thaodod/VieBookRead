@@ -52,7 +52,7 @@ def search_html_files(f_content_pairs, query, threshold=68, block_size=3):
             score = fuzz.partial_ratio(query.lower(), block_text.lower())
             score_o = fuzz.partial_ratio(query, block_text)
             if count_words(query) <= 5:
-                score = (score * 2 + score_o) / 3
+                score = (score * 3 + score_o) / 4
             else:
                 score = max(score, score_o)
 

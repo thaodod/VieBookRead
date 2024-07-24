@@ -5,7 +5,7 @@ import math
 
 def is_meaning_str(
     text,
-    languages=["en", "es", "fr", "de", "vi", "zh-tw", "zh-cn"],
+    languages=["en", "es", "fr", "de", "vi", "zh-tw", "zh-cn", "tl"],
     min_length=5,
     entropy_threshold=4,
 ):
