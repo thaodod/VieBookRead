@@ -51,23 +51,30 @@ def search_html_files(f_content_pairs, query, threshold=68, block_size=3):
         for i in range(num_paragraphs - curr_blk_size + 1):
             block = paragraphs[i : i + curr_blk_size]
             block_text = " ".join(render_blk(paragraph) for paragraph in block)
+
+            if len(query) > len(block_text):
+                start_idx = max(i - 2, 0)
+                end_idx = min(i + curr_blk_size + 2, num_paragraphs)
+                block = paragraphs[start_idx:end_idx]
+                block_text = " ".join(render_blk(paragraph) for paragraph in block)
+
             score = fuzz.partial_ratio(query.lower(), block_text.lower())
             score_o = fuzz.partial_ratio(query, block_text)
             if count_words(query) <= 5:
-                score = (score * 2 + score_o) / 3
+                score = (score * 3 + score_o) / 4
             else:
                 score = max(score, score_o)
 
             if score >= threshold and score > highest_score:
                 highest_scored_block = (block, score)
                 highest_score = score
-            if highest_score > 95:  # no need to search more block
+            if highest_score > 97:  # no need to search more block
                 break
 
         if highest_scored_block:
             matched_files.append((file, highest_score, highest_scored_block))
 
-        if highest_score > 95:  # no need to search more file
+        if highest_score > 97:  # no need to search more file
             break
 
     # Sort matched files by their score in descending order
@@ -100,9 +107,12 @@ def proc_paragraph(para, file_content_pairs, args):
 
     if match_files:
         _, _, blocks0 = match_files[0]
-        block_cont, _ = blocks0
+        block_cont, score = blocks0
         simple_html = compose_html(block_cont)
-        correct_para = text_correct(simple_html, para_text, args.m)
+        if score == 100:
+            correct_para = para_text
+        else:
+            correct_para = text_correct(simple_html, para_text, args.m)
 
         if correct_para:
             para["content-fix"] = correct_para
@@ -125,7 +135,7 @@ def main():
     parser.add_argument("source", help="dir to load all ref html files")
     parser.add_argument("json_dir", help="dir to load input json files")
     parser.add_argument("-o", help="where to save json files of a book")
-    parser.add_argument("-m", default="gpt3", help="model to correct text")
+    parser.add_argument("-m", default="gpt4", help="model to correct text")
 
     args = parser.parse_args()
 
