@@ -7,38 +7,42 @@ from anthropic import AnthropicVertex, APIError
 
 claude_client = AnthropicVertex(region="us-central1", project_id="***REMOVED***")
 
-open_client = OpenAI(api_key="***REMOVED***",)
+open_client = OpenAI(
+    api_key="***REMOVED***",
+)
 
-def text_correct(ref_html, para, mode='gpt3'):
+
+def text_correct(ref_html, para, mode="gpt4"):
     prompt = f"""
     Given an html content as below:
     {ref_html}
 
-    Then I provide a text which needs to be corrected as it is predicted from imperfect OCR tool. Use html content as reference source to correct below input text:
+    Then providing a text which may need adjustments as it is predicted from imperfect OCR tool. Use html content as reference source to correct below input text:
     <input-text>
     {para}
     </input-text>
 
-    Strictly keep the orthography (and punctuation) of the reference, only correct based on what existed on input text carefully.
-    First word of the text could also be typo too, check all words and letters carefully equally.
-    Answer corrected text, important: Give only the processed result, without any explanations, formatting or XML-like tag.
+    Firmly follow orthography and punctuation of the reference, only correct words existed within input text.
+    Avoid include content from the reference to fill up input but those are not actually existed within input.
+    First word of the text could also mis-recognized, check all words and letters carefully equally.
+    Answer corrected text, important: give only the processed result, without any explanations, formatting or tag.
     """
-    
-    if mode == 'gpt3' or mode == 'gpt4':
+
+    if mode == "gpt3" or mode == "gpt4":
         client = open_client
-        m_name = "gpt-3.5-turbo" if mode == 'gpt3' else "gpt-4o"
-        
+        m_name = "gpt-3.5-turbo" if mode == "gpt3" else "gpt-4o-mini"
+
         try:
             response = client.chat.completions.create(
                 model=m_name,
                 messages=[
-                    {"role": "system", "content": "You are an assistant."},
+                    {"role": "system", "content": "Assist user to correct text if needed"},
                     {
                         "role": "user",
                         "content": prompt,
                     },
                 ],
-                temperature=0.0
+                temperature=0.0,
             )
             return response.choices[0].message.content
         except OpenAIError as e:
@@ -49,7 +53,7 @@ def text_correct(ref_html, para, mode='gpt3'):
             print(f"A network error occurred: {e}")
             return None
 
-    elif mode == 'haiku':
+    elif mode == "haiku":
         client = claude_client
         m_name = "claude-3-haiku@20240307"
 
@@ -57,13 +61,13 @@ def text_correct(ref_html, para, mode='gpt3'):
             message = client.messages.create(
                 messages=[
                     {
-                    "role": "user",
-                    "content": prompt,
+                        "role": "user",
+                        "content": prompt,
                     }
                 ],
                 model=m_name,
                 max_tokens=2048,
-                temperature=0.0
+                temperature=0.0,
             )
             return message.content[0].text
         except APIError as e:
@@ -77,9 +81,9 @@ def text_correct(ref_html, para, mode='gpt3'):
         except Exception as e:
             print(f"An unexpected error occurred: {e}")
             return None
-        
-    elif mode == 'test':
+
+    elif mode == "test":
         return "testing mode enabled"
-        
+
     else:
         raise ValueError("invalid mode, only gpt3 gpt4 or haiku")

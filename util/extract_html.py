@@ -29,60 +29,62 @@ def clean_nested_spans(html_content):
 
 
 def flatten_html(html_content):
-    # First, clean up the nested structure
     cleaned_html = clean_nested_spans(html_content)
     soup = BeautifulSoup(cleaned_html, "html.parser")
-
-    # Remove script and style elements
-    for script in soup(["script", "style"]):
-        script.decompose()
 
     paragraphs = []
     current_paragraph = []
 
-    def process_element(element):
+    stack = [soup.body or soup]
+
+    while stack:
+        element = stack.pop()
+
         if isinstance(element, NavigableString):
             current_paragraph.append(str(element))
         elif isinstance(element, Tag):
-            if element.name in ["br", "p", "div", "li", "aside"] or element.name in [
-                "h1",
-                "h2",
-                "h3",
-                "h4",
-                "h5",
-                "h6",
-            ]:
+            # Remove nested <a> around <sub>/<sup> or <sub>/<sup> around <a>
+            if (
+                element.name == "a"
+                and any(child.name in ["sub", "sup"] for child in element.children)
+            ) or (
+                element.name in ["sub", "sup"]
+                and any(child.name == "a" for child in element.children)
+            ):
+                continue
+            elif element.name in ["br", "p", "div", "li", "aside"]:
                 if current_paragraph:
                     paragraphs.append("".join(current_paragraph))
                     current_paragraph.clear()
                 if element.name != "br":
-                    if element.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
-                        current_paragraph.append(f"<{element.name}>")
-                    for child in element.children:
-                        process_element(child)
-                    if element.name in ["h1", "h2", "h3", "h4", "h5", "h6"]:
-                        current_paragraph.append(f"</{element.name}>")
-            elif element.name in ["sup", "sub", "a"]:
-                current_paragraph.append(str(element))
+                    for child in reversed(element.contents):
+                        stack.append(child)
             else:
-                for child in element.children:
-                    process_element(child)
-
-    # Handle cases where there might not be a body tag or when the body is empty
-    body = soup.body or soup
-    if body:
-        for element in body.children:
-            process_element(element)
+                if element.name in [
+                    "a",
+                    "sub",
+                    "sup",
+                    "h1",
+                    "h2",
+                    "h3",
+                    "h4",
+                    "h5",
+                    "h6",
+                ]:
+                    current_paragraph.append(element.get_text())
+                else:
+                    for child in reversed(element.contents):
+                        stack.append(child)
 
     if current_paragraph:
         paragraphs.append("".join(current_paragraph))
 
-    # Filter out empty or all-space paragraphs, wrap with <p> tags, and clean up whitespace
+    # Filter out empty or all-space paragraphs, wrap with <p> tags
     cleaned_paragraphs = []
     for p in paragraphs:
         if p.strip():
             # Clean up whitespace
             cleaned = re.sub(r"\s+", " ", p.strip())
-            cleaned_paragraphs.append(f"<div>{cleaned}</div>")
+            cleaned_paragraphs.append(f"<p>{cleaned}</p>")
 
     return cleaned_paragraphs
