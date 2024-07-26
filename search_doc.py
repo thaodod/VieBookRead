@@ -85,8 +85,7 @@ def load_json(file_path):
     try:
         with open(file_path, "r", encoding="utf-8") as file:
             data = json.load(file)
-        # Skip the first element (meta info)
-        return data[1:]
+        return data[0], data[1:] # meta, real data
     except json.JSONDecodeError:
         print(f"Error: '{file_path}' is not a valid JSON")
         return None
@@ -107,7 +106,7 @@ def main():
     for in_js_path in json_paths:
         # each js_path is 1 json file.
         js_basename = os.path.basename(in_js_path)
-        para_list = load_json(in_js_path)
+        meta, para_list = load_json(in_js_path)
 
         for para in para_list:
             para_text = para["content"]
@@ -131,7 +130,7 @@ def main():
                     correct_para = text_correct(simple_html, para_text, args.m)
 
                 if correct_para:
-                    para["content-fix"] = correct_para
+                    para["content_"] = correct_para
                     para["status"] = "corrected"
                 else:
                     para["status"] = "try_again"

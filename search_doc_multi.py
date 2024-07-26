@@ -1,97 +1,17 @@
 import argparse
 import os
 import glob
-from bs4 import BeautifulSoup
-from thefuzz import fuzz
-from thefuzz import process
 from util.lang_detect import is_meaning_str
 from util.count_token import (
-    clean_html_txt,
     compose_html,
     contain_alpha_num,
     count_words,
 )
-from util.extract_html import flatten_html
 from text_match import text_correct  # call LLM here.
 import json
 from functools import partial
 import multiprocessing as mp
-
-
-def load_dir(dir):
-    html_files = [f for f in os.listdir(dir) if f.endswith((".html", ".xhtml", ".htm"))]
-    file_n_contents = []
-    for html_file in html_files:
-        with open(os.path.join(dir, html_file), "r", encoding="utf-8") as file:
-            content = clean_html_txt(file.read())
-            htm_para_s = flatten_html(content)
-        file_n_contents.append((html_file, htm_para_s))
-
-    return file_n_contents
-
-
-def render_blk(paragraph):
-    mini_soup = BeautifulSoup(paragraph, "html.parser")
-    return mini_soup.get_text()
-
-
-def search_html_files(f_content_pairs, query, threshold=68, block_size=3):
-    matched_files = []
-
-    for file, paragraphs in f_content_pairs:
-        curr_blk_size = block_size
-
-        # Store the highest scored block with its score and HTML
-        highest_scored_block = None
-        highest_score = 0
-
-        num_paragraphs = len(paragraphs)
-        if num_paragraphs < curr_blk_size:
-            curr_blk_size = num_paragraphs
-        for i in range(num_paragraphs - curr_blk_size + 1):
-            block = paragraphs[i : i + curr_blk_size]
-            block_text = " ".join(render_blk(paragraph) for paragraph in block)
-
-            if len(query) > len(block_text):
-                start_idx = max(i - 2, 0)
-                end_idx = min(i + curr_blk_size + 2, num_paragraphs)
-                block = paragraphs[start_idx:end_idx]
-                block_text = " ".join(render_blk(paragraph) for paragraph in block)
-
-            score = fuzz.partial_ratio(query.lower(), block_text.lower())
-            score_o = fuzz.partial_ratio(query, block_text)
-            if count_words(query) <= 5:
-                score = (score * 3 + score_o) / 4
-            else:
-                score = max(score, score_o)
-
-            if score >= threshold and score > highest_score:
-                highest_scored_block = (block, score)
-                highest_score = score
-            if highest_score > 97:  # no need to search more block
-                break
-
-        if highest_scored_block:
-            matched_files.append((file, highest_score, highest_scored_block))
-
-        if highest_score > 97:  # no need to search more file
-            break
-
-    # Sort matched files by their score in descending order
-    matched_files.sort(key=lambda x: x[1], reverse=True)
-
-    return matched_files
-
-
-def load_json(file_path):
-    try:
-        with open(file_path, "r", encoding="utf-8") as file:
-            data = json.load(file)
-        # Skip the first element (meta info)
-        return data[1:]
-    except json.JSONDecodeError:
-        print(f"Error: '{file_path}' is not a valid JSON")
-        return None
+from search_doc import search_html_files, load_dir, load_json
 
 
 def proc_paragraph(para, file_content_pairs, args):
@@ -153,7 +73,7 @@ def main():
     for in_js_path in json_paths:
         # each js_path is 1 json file.
         js_basename = os.path.basename(in_js_path)
-        para_list = load_json(in_js_path)
+        meta, para_list = load_json(in_js_path)
 
         para_list = parallel_proc(para_list, file_content_pairs, args)
 
