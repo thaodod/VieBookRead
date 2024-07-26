@@ -11,7 +11,7 @@ def count_words(inp_string):
     chinese_pattern = r"[\u4e00-\u9fff]"
 
     # Split input string by any non-word character and underscore (to handle all punctuation and spaces)
-    words = re.split(r"\W+", inp_string)
+    words = re.split(r"\W+", inp_string.strip())
 
     # Filter out any empty strings resulting from the split
     words = list(filter(None, words))
