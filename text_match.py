@@ -4,6 +4,8 @@
 from requests import RequestException
 from openai import OpenAI, OpenAIError
 from anthropic import AnthropicVertex, APIError
+from util.lm_util import str_gap
+from thefuzz import fuzz
 
 claude_client = AnthropicVertex(region="us-central1", project_id="***REMOVED***")
 
@@ -12,7 +14,7 @@ open_client = OpenAI(
 )
 
 
-def text_correct(ref_html, para, mode="gpt4"):
+def lm_correct(ref_html, para, mode="gpt4"):
     prompt = f"""
     Given an html content as below:
     {ref_html}
@@ -83,7 +85,43 @@ def text_correct(ref_html, para, mode="gpt4"):
             return None
 
     elif mode == "test":
-        return "testing mode enabled"
+        return "test"
 
     else:
         raise ValueError("invalid mode, only gpt3 gpt4 or haiku")
+
+
+def fix_dot(origin, mod):
+    if not origin.strip().endswith(".") and mod.endswith("."):
+        return mod[:-1]
+    else:
+        return mod
+
+
+def correct_text(ref, para, mode="gpt4"):
+    # wrap around to do correct text full process
+    # It verify step also included
+    # if para and modified is too far from each other
+    # then gpt3.5 also used, compare 2 mode (gpt4 vs gpt3)
+    # return only the one has high sim & shorter text.
+    if mode == "test":
+        return "test"
+
+    result0 = lm_correct(ref, para, mode)
+    gc, gw, gs = str_gap(para, result0)
+
+    if gc > 1.3 or gc < 0.6 or gw >= 4 or gs < 60:
+        # seem unusual cases
+        result1 = lm_correct(ref, para, "gpt3")
+        _, gw1, gs1 = str_gap(para, result1)
+        vs_score = fuzz.partial_ratio(result1, result0)
+
+        # closer to num of words of original
+        if gw1 < gw and vs_score >= 80:
+            return fix_dot(result1)
+
+        # shorter but more accurate case.
+        if len(result1) < len(result0) and (gs1 > gs or vs_score >= 99):
+            return fix_dot(result1)
+
+    return fix_dot(result0)

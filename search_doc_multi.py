@@ -7,11 +7,11 @@ from util.count_token import (
     contain_alpha_num,
     count_words,
 )
-from text_match import text_correct  # call LLM here.
+from text_match import correct_text  # call LLM here.
 import json
 from functools import partial
 import multiprocessing as mp
-from search_doc import search_html_files, load_dir, load_json
+from search_doc import search_html, load_dir, load_json
 
 
 def proc_paragraph(para, file_content_pairs, args):
@@ -23,7 +23,7 @@ def proc_paragraph(para, file_content_pairs, args):
             para["status"] = "skip"
         return para
 
-    match_files = search_html_files(file_content_pairs, para_text)
+    match_files = search_html(file_content_pairs, para_text)
 
     if match_files:
         _, _, blocks0 = match_files[0]
@@ -32,10 +32,10 @@ def proc_paragraph(para, file_content_pairs, args):
         if score == 100:
             correct_para = para_text
         else:
-            correct_para = text_correct(simple_html, para_text, args.m)
+            correct_para = correct_text(simple_html, para_text, args.m)
 
         if correct_para:
-            para["content-fix"] = correct_para
+            para["content_"] = correct_para
             para["status"] = "corrected"
         else:
             para["status"] = "try_again"

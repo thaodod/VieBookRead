@@ -12,7 +12,7 @@ from util.count_token import (
     count_words,
 )
 from util.extract_html import flatten_html
-from text_match import text_correct  # call LLM here.
+from text_match import correct_text  # call LLM here.
 import json
 
 
@@ -33,14 +33,14 @@ def render_blk(paragraph):
     return mini_soup.get_text()
 
 
-def search_html_files(f_content_pairs, query, threshold=68, block_size=3):
+def search_html(f_content_pairs, query, threshold=68, block_size=3):
     matched_files = []
 
     for file, paragraphs in f_content_pairs:
         curr_blk_size = block_size
 
         # Store the highest scored block with its score and HTML
-        highest_scored_block = None
+        best_block = None
         highest_score = 0
 
         num_paragraphs = len(paragraphs)
@@ -64,13 +64,13 @@ def search_html_files(f_content_pairs, query, threshold=68, block_size=3):
                 score = max(score, score_o)
 
             if score >= threshold and score > highest_score:
-                highest_scored_block = (block, score)
+                best_block = (block, score)
                 highest_score = score
             if highest_score > 97:  # no need to search more block
                 break
 
-        if highest_scored_block:
-            matched_files.append((file, highest_score, highest_scored_block))
+        if best_block:
+            matched_files.append((file, highest_score, best_block))
 
         if highest_score > 97:  # no need to search more file
             break
@@ -117,7 +117,7 @@ def main():
                     para["status"] = "skip"
                 continue
 
-            match_files = search_html_files(file_content_pairs, para_text)
+            match_files = search_html(file_content_pairs, para_text)
 
             if match_files:
                 # highest sim score file is used to search
@@ -127,7 +127,7 @@ def main():
                 if score == 100:
                     correct_para = para_text
                 else:
-                    correct_para = text_correct(simple_html, para_text, args.m)
+                    correct_para = correct_text(simple_html, para_text, args.m)
 
                 if correct_para:
                     para["content_"] = correct_para
