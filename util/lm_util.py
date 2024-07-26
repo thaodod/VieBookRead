@@ -18,6 +18,15 @@ def is_relevant(ref, query, score):
     if count_words(query) >= 7 and score >= 86:
         return True
 
+    if count_words(query) >= 10 and score >= 80:
+        return True
+
+    if count_words(query) >= 20 and score >= 75:
+        return True
+
+    if count_words(query) <= 4 and score < 80:
+        return False
+
     prompt = f"""
     Given a retrieved html content as below:
     {ref}

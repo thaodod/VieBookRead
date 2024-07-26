@@ -3,15 +3,28 @@ from bs4 import BeautifulSoup
 import tiktoken
 from lxml.html.clean import Cleaner
 from lxml.html import tostring, fromstring
-import string
 import re
 
 
 def count_words(inp_string):
-    # Define punctuation characters, including the hyphen
-    punctuation = string.punctuation + "-"
-    no_punct = re.sub("[" + punctuation + "]", " ", inp_string)
-    return len(no_punct.split())
+    # Define a regular expression pattern for Chinese characters
+    chinese_pattern = r"[\u4e00-\u9fff]"
+
+    # Split input string by any non-word character and underscore (to handle all punctuation and spaces)
+    words = re.split(r"\W+", inp_string)
+
+    # Filter out any empty strings resulting from the split
+    words = list(filter(None, words))
+
+    # Count the words including individual Chinese characters
+    word_count = 0
+    for word in words:
+        if re.search(chinese_pattern, word):
+            word_count += len(word)  # Count each Chinese character as a word
+        else:
+            word_count += 1  # Count other words as 1 word
+
+    return word_count
 
 
 def contain_alpha_num(s):
