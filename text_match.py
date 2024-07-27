@@ -108,12 +108,12 @@ def correct_text(ref, para, mode="gpt4"):
         return "test"
 
     result0 = lm_correct(ref, para, mode)
-    gc, gw, gs = str_gap(para, result0)
+    gc, gw, sim = str_gap(para, result0)
 
-    if gc > 1.3 or gc < 0.6 or gw >= 4 or gs < 60:
+    if gc > 1.3 or gc < 0.6 or gw >= 4 or sim < 60:
         # seem unusual cases
         result1 = lm_correct(ref, para, "gpt3")
-        _, gw1, gs1 = str_gap(para, result1)
+        _, gw1, sim1 = str_gap(para, result1)
         vs_score = fuzz.partial_ratio(result1, result0)
 
         # closer to num of words of original
@@ -121,7 +121,7 @@ def correct_text(ref, para, mode="gpt4"):
             return fix_dot(result1)
 
         # shorter but more accurate case.
-        if len(result1) < len(result0) and (gs1 > gs or vs_score >= 99):
+        if len(result1) < len(result0) and (sim1 > sim or vs_score >= 98):
             return fix_dot(result1)
 
     return fix_dot(result0)

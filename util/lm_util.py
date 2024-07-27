@@ -58,5 +58,5 @@ def is_relevant(ref, query, score):
 def str_gap(origin, mod):
     gap_c = len(mod.strip()) / len(origin.strip())
     gap_w = abs(count_words(mod) - count_words(origin))
-    gap_s = fuzz.ratio(origin.strip().lower(), mod.strip().lower())
-    return gap_c, gap_w, gap_s
+    sim = fuzz.ratio(origin.strip().lower(), mod.strip().lower())
+    return gap_c, gap_w, sim
