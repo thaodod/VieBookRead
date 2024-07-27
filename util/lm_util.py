@@ -1,5 +1,5 @@
 from openai import OpenAI
-from count_token import count_words
+from util.count_token import count_words
 from thefuzz import fuzz
 
 client = OpenAI(
