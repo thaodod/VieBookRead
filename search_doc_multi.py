@@ -11,6 +11,7 @@ from text_match import correct_text  # call LLM here.
 import json
 import multiprocessing as mp
 from search_doc import search_html, load_dir, load_json
+from util.lm_util import is_relevant
 
 
 def process_json_file(args, in_js_path, file_content_pairs):
@@ -29,24 +30,28 @@ def process_json_file(args, in_js_path, file_content_pairs):
         match_files = search_html(file_content_pairs, para_text)
 
         if match_files:
-            # highest sim score file is used to search
+            files, scores, _ = zip(*match_files)
+            para["search-doc"] = files
+            para["search-sco"] = scores
+
+            # highest sim file is used to correct
             _, _, blocks0 = match_files[0]
             block_cont, score = blocks0
             simple_html = compose_html(block_cont)
-            if score == 100:
-                correct_para = para_text
-            else:
-                correct_para = correct_text(simple_html, para_text, args.m)
+            if score == 100:  # already perfect!
+                para["status"] = "perfect"
+                continue
 
-            if correct_para:
-                para["content_"] = correct_para
-                para["status"] = "corrected"
+            if is_relevant(simple_html, para_text, score):
+                fix_txt, flag = correct_text(simple_html, para_text, args.m)
+                if not flag:  # not modified
+                    para["status"] = "intact"
+                    continue
+                else:
+                    para["status"] = "corrected"
+                    para["content_"] = fix_txt
             else:
-                para["status"] = "try_again"
-
-            files, scores, _ = zip(*match_files)
-            para["search-doc"] = files
-            para["search-score"] = scores
+                para["status"] = "not_relevant"
 
         else:
             para["status"] = "not_found"

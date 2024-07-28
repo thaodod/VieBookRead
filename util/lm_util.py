@@ -15,7 +15,7 @@ def yes_no(answer):
 
 
 def is_relevant(ref, query, score):
-    if count_words(query) >= 7 and score >= 86:
+    if count_words(query) >= 4 and score >= 86:
         return True
 
     if count_words(query) >= 10 and score >= 80:
@@ -24,7 +24,7 @@ def is_relevant(ref, query, score):
     if count_words(query) >= 20 and score >= 75:
         return True
 
-    if count_words(query) <= 4 and score < 80:
+    if count_words(query) <= 4 and score < 72:
         return False
 
     prompt = f"""
@@ -58,5 +58,24 @@ def is_relevant(ref, query, score):
 def str_gap(origin, mod):
     gap_c = len(mod.strip()) / len(origin.strip())
     gap_w = abs(count_words(mod) - count_words(origin))
-    sim = fuzz.ratio(origin.strip().lower(), mod.strip().lower())
+    sim = fuzz.partial_ratio(origin.lower(), mod.lower())
     return gap_c, gap_w, sim
+
+
+def visual_similar(ori, mod):
+    prompt=f"""Do you think 2 strings "{ori}" and "{mod}" are visually similar (regardless semantics) ?
+    Answer yes or no shortly without explanation or formatting"""
+    
+    answer = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": "Assist user to compare string visual similarity",
+            },
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0.0,
+    )
+    
+    return yes_no(answer.choices[0].message.content)
