@@ -111,7 +111,9 @@ def count_token(content):
 def compose_html(paragraphs):
     para_txt = [str(paragraph) for paragraph in paragraphs]
     para_txt = " ".join(para_txt)
-    html_template = f"""<html><head><meta charset="UTF-8"></head><body>{para_txt}</body></html>"""
+    html_template = (
+        f"""<html><head><meta charset="UTF-8"></head><body>{para_txt}</body></html>"""
+    )
     return html_template
 
 
@@ -126,3 +128,7 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+def has_chinese(s):
+    return bool(re.search("[\u4e00-\u9fff]", s))

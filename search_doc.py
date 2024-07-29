@@ -143,7 +143,7 @@ def main():
                 para["status"] = "not_found"
 
         if not os.path.exists(args.o):
-            os.makedirs(args.o)
+            os.makedirs(args.o, exist_ok=True)
 
         save_target = os.path.join(args.o, js_basename)
         with open(save_target, "w", encoding="utf-8") as file:

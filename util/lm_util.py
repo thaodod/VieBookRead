@@ -79,3 +79,55 @@ def visual_similar(ori, mod):
     )
     
     return yes_no(answer.choices[0].message.content)
+
+
+def is_spelling_correct(text):
+    prompt=f"""The <text>{text}</text> is spelling correct?
+    Answer yes or no shortly without explanation, formatting or xml tag"""
+    
+    answer = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": "Assist user to check spelling (primary language is in Vietnamese, sometimes mixed with English, French)",
+            },
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0.0,
+    )
+    return yes_no(answer.choices[0].message.content)
+
+
+def fix_spelling(text, nearby):
+    if nearby.strip():
+        prompt=f"""Given a text as below:
+        <input-text>{text}</input-text>
+        
+        Also providing nearby content around the input which is already corrected as below:
+        <content> {nearby} </content>
+        
+        Make correct spelling only if needed (important: just minimal change).
+        If the text is actually (random) nonsense sequence, please return original.
+        Answer processed text only without explanation, formatting, tag"""
+    else:
+        prompt=f"""Given a text as below:
+        <input-text>{text}</input-text>
+        
+        Make correct spelling only if needed (important: just minimal change).
+        If the text is actually (random) nonsense sequence, please return original.
+        Answer processed text only without explanation, formatting, tag"""
+        
+    
+    answer = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {
+                "role": "system",
+                "content": "Assist user to make spelling correction if needed (primary language is in Vietnamese, sometimes mixed with English, French)",
+            },
+            {"role": "user", "content": prompt},
+        ],
+        temperature=0.0,
+    )
+    return answer.choices[0].message.content
