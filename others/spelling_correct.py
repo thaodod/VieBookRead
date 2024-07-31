@@ -77,7 +77,6 @@ def load_json(file_path):
 
 
 def process_json(args, js_path):
-    checker = SpellingChecker()
     js_basename = os.path.basename(js_path)
     save_target = os.path.join(args.o, js_basename)
 
@@ -89,6 +88,7 @@ def process_json(args, js_path):
     para_list = load_json(js_path)
     out_list = []
 
+    checker = SpellingChecker()
     try:
         for para in para_list:
             para_text = para["content"]
@@ -117,7 +117,7 @@ def process_json(args, js_path):
                             f"Failed to process paragraph after {max_retries} attempts: {para_text}"
                         )
 
-            time.sleep(0.5)
+            time.sleep(0.1)
     finally:
         checker.close()
 
@@ -139,7 +139,7 @@ def main():
     json_paths = glob.glob(os.path.join(args.json_dir, "*.json"))
 
     # Use multiprocessing to process JSON files in parallel
-    with mp.Pool(processes=3) as pool:
+    with mp.Pool(processes=6) as pool:
         pool.starmap(
             process_json,
             [(args, in_js_path) for in_js_path in json_paths],
