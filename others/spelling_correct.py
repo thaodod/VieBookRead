@@ -5,7 +5,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.firefox.service import Service as FirefoxService
-from webdriver_manager.firefox import GeckoDriverManager
 import time
 import json
 import os
@@ -118,7 +117,7 @@ def process_json(args, js_path):
                             f"Failed to process paragraph after {max_retries} attempts: {para_text}"
                         )
 
-            time.sleep(1)
+            time.sleep(0.5)
     finally:
         checker.close()
 
@@ -140,7 +139,7 @@ def main():
     json_paths = glob.glob(os.path.join(args.json_dir, "*.json"))
 
     # Use multiprocessing to process JSON files in parallel
-    with mp.Pool(processes=2) as pool:
+    with mp.Pool(processes=3) as pool:
         pool.starmap(
             process_json,
             [(args, in_js_path) for in_js_path in json_paths],
