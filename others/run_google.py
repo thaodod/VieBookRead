@@ -12,21 +12,23 @@ PROJECT_ID = "***REMOVED***"
 LOCATION = "us"
 PROCESSOR_ID = "fa80821cbaf0aa18"
 
+# Instantiates a client
+docai_client = documentai.DocumentProcessorServiceClient(
+    client_options=ClientOptions(api_endpoint=f"{LOCATION}-documentai.googleapis.com")
+)
+RESOURCE_NAME = docai_client.processor_path(PROJECT_ID, LOCATION, PROCESSOR_ID)
+
 
 def process_image(image_path, output_dir):
     """Processes a single image, extracts text, and creates a JSON file."""
+    output_file = os.path.join(output_dir, Path(image_path).stem + ".json")
+    if os.path.exists(output_file):
+        print(f"The file {output_file} already exists. Skip")
+        return
 
     # Load image into memory
     with open(image_path, "rb") as image_file:
         image_content = image_file.read()
-
-    # Instantiates a client
-    docai_client = documentai.DocumentProcessorServiceClient(
-        client_options=ClientOptions(
-            api_endpoint=f"{LOCATION}-documentai.googleapis.com"
-        )
-    )
-    RESOURCE_NAME = docai_client.processor_path(PROJECT_ID, LOCATION, PROCESSOR_ID)
 
     # Load Binary Data into Document AI RawDocument Object
     raw_document = documentai.RawDocument(content=image_content, mime_type="image/jpeg")
@@ -41,7 +43,7 @@ def process_image(image_path, output_dir):
     text = result.document.text
 
     # Save the JSON file
-    output_file = os.path.join(output_dir, Path(image_path).stem + ".json")
+    
     with open(output_file, "w") as f:
         json.dump(text, f, indent=2, ensure_ascii=False)
     print(f"saved {output_file} successfully")
@@ -60,7 +62,7 @@ def process_directory(input_dir, output_dir):
     tasks = []
     for root, _, files in os.walk(input_dir):
         for file in files:
-            if file.lower().endswith((".jpg", ".jpeg")):
+            if file.lower().endswith((".jpg")):
                 image_path = os.path.join(root, file)
                 relative_path = os.path.relpath(root, input_dir)
                 file_output_dir = os.path.join(output_dir, relative_path)
@@ -71,7 +73,7 @@ def process_directory(input_dir, output_dir):
     # Use all available CPU cores
     num_processes = multiprocessing.cpu_count()
 
-    with Pool(processes=2) as pool:
+    with Pool(processes=num_processes) as pool:
         results = pool.map(process_file, tasks)
 
     # Print results
