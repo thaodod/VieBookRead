@@ -1,5 +1,6 @@
 import os
 import json
+import time
 from google.cloud import documentai_v1 as documentai
 from google.api_core.client_options import ClientOptions
 import argparse
@@ -23,7 +24,7 @@ def process_image(image_path, output_dir):
     """Processes a single image, extracts text, and creates a JSON file."""
     output_file = os.path.join(output_dir, Path(image_path).stem + ".json")
     if os.path.exists(output_file):
-        print(f"The file {output_file} already exists. Skip")
+        # print(f"The file {output_file} already exists. Skip")
         return
 
     # Load image into memory
@@ -43,10 +44,11 @@ def process_image(image_path, output_dir):
     text = result.document.text
 
     # Save the JSON file
-    
+
     with open(output_file, "w") as f:
         json.dump(text, f, indent=2, ensure_ascii=False)
     print(f"saved {output_file} successfully")
+    time.sleep(0.2)
 
 
 def process_file(args):
@@ -71,7 +73,7 @@ def process_directory(input_dir, output_dir):
                 tasks.append((image_path, file_output_dir))
 
     # Use all available CPU cores
-    num_processes = multiprocessing.cpu_count()
+    num_processes = int(multiprocessing.cpu_count() / 2)
 
     with Pool(processes=num_processes) as pool:
         results = pool.map(process_file, tasks)
