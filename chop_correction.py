@@ -4,7 +4,7 @@ import glob
 
 import json
 import multiprocessing as mp
-from others.crop import find_best_match
+from others.crop import find_best_match, count_w
 
 
 def load_json(file_path):
@@ -31,8 +31,12 @@ def process_json(args, js_path):
             best_match, h_score = find_best_match(para_text, para_llm)
             para["content_c"] = best_match
             para["halu_score"] = h_score
-            if len(best_match) < len(para_llm):
-                print(js_path)
+            if count_w(best_match) < count_w(para_llm):
+                print("cut off ", js_path)
+
+            if count_w(para_text) > count_w(best_match) + 5:
+                # when OCR is longer than chop off
+                print("OCR longer ", js_path)
 
     if not os.path.exists(args.o):
         os.makedirs(args.o, exist_ok=True)
@@ -40,7 +44,7 @@ def process_json(args, js_path):
     save_target = os.path.join(args.o, js_basename)
     with open(save_target, "w", encoding="utf-8") as file:
         json.dump(para_list, file, indent=4, ensure_ascii=False)
-    print(f"Saved file {save_target} successfully")
+    # print(f"Saved file {save_target} successfully")
 
 
 # Work for each book, not for all at the same time.
