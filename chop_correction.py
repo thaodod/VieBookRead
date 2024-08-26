@@ -32,9 +32,11 @@ def process_json(args, js_path):
             para["content_c"] = best_match
             para["halu_score"] = h_score
             if count_w(best_match) < count_w(para_llm):
-                print("cut off ", js_path)
+                print("cutoff:", js_path)
+                print("before:", para_llm)
+                print("after_:", best_match)
 
-            if count_w(para_text) > count_w(best_match) + 5:
+            if count_w(para_text) > count_w(best_match) + 6:
                 # when OCR is longer than chop off
                 print("OCR longer ", js_path)
 
