@@ -1,7 +1,7 @@
 import re
 import Levenshtein
 
-MAX_ATT = 3
+MAX_ATT = 4
 
 
 def norm_ed(s1, s2):
@@ -200,6 +200,10 @@ def find_best_match(short_seq, long_seq):
 #     (
 #         "Nàng là người làm ruộng và cũng chỉ nghề làm ruộng. Nông nghiệp In cần -bản của nền kinh-tế quốc-gia, bởi vậy, ngày klit dai định, trước khi to-chức thi Hương, vua The-to da ban- hành chính sách nòng-nghiệp, cho thiết-lập điền-hạ, qui-định việc đặc thù công-thổ, còng-điền, truyền cho các trấn, nhất là ở Bắc thành, phải xơi đào sông ngòi, vét các cửa biển, bảo- vệ. thiết lập và tu-hồ các bộ-thống để điều. Chính-sách ruộng dat nhà Nguyễn phá vo chế-đo điền-trang của các triều-đại trước, thiết-lập được chế độ tư-điền, nhờ đó mỗi người dân có lối- thiếu vài ba sảo ruộng tư đề cày-cấy ngoài số còng-điền được hàng-xã cấp-phát. Những thí-nghiệm thành-công của Nguyễn- Công Trú tại Tiền-hải, Kim-sơn, Quảng-yên năm 1828-29, ngoài việc khai-khẩu được hơn 30.000 mẫu ruộng và hoàn-thành kế hoạch di dân, còn giúp triều-đình giải-quyết được nạn đói kèm và giặc cướp (61). Sắc-dụ năm 1830 của vua Minh-mệnh chấp-thuận cấp-phát những ruộng đất bỏ hoang cho bất cứ ai có đơn xin ; Sắc-dụ năm 1864 cho phép được thành-lập một ấp mới, tất cả những ai đã vỡ được 20 mẫu ruộng và tập-trung được 10 dân định. Đặc sắc nhất là Sắc-dụ năm 1840 bắt-buộc các dại tiền-chủ phải cắt 1/3 dien-sản bo vào công-điền ; Sắc- dụ tiến-họ này tiếc thay chỉ được áp dụng một phần ở Gia-định rồi sau tại bị đình-chỉ vì triều đình còn bận đối-phc với những rắc rối chinh -trị về phía Cao-mien. Các lãnh tụ nhỉ Nguyễn đã thay ró những tương-quan hỗ tương giữa kinh tế và xã-hội ; tình trạng bết-an của dân-chúng bắt nguồn từ sự nghèo đói, từ",
 #         "Nông là người làm ruộng và cũng chỉ nghề làm ruộng. Nông nghiệp là căn-bản của nền kinh-tế quốc-gia, bởi vậy, ngay khi đại-định, trước khi tổ-chức thi Hương, vua Thế-tổ đã ban-hành chánh-sách nông-nghiệp, cho thiết-lập điền-hạ, qui-định việc đắc-thụ công-thổ, công-điền, truyền cho các trấn, nhất là ở Bắc-thành, phải xoi đào sông ngòi, vét các cửa biển, bảo-vệ, thiết-lập và tu-bổ các hệ-thống đê-điều. Chính-sách ruộng đất nhà Nguyễn phá vỡ chế-độ điền-trang của các triều-đại trước, thiết lập được chế-độ tư-điền, nhờ đó mỗi người dân có tối-thiểu vài ba sào ruộng tư để cày-cấy ngoài số công-điền được hàng-xá cấp-phát. Những thí-nghiệm thành-công của Nguyễn-Công-Trứ tại Tiền-hải, Kim-sơn, Quảng-yên năm 1828-29, ngoài việc khai-khẩn được hơn 30.000 mẫu ruộng và hoàn-thành kế-hoạch di-dân, còn giúp triều-đình giải-quyết được nạn đói kém và giặc cướp. Sắc-dụ năm 1830 của vua Minh-mệnh chấp-thuận cấp-phát những ruộng đất bỏ hoang cho bất cứ ai có đơn xin; Sắc-dụ năm 1864 cho phép được thành-lập một ấp mới, tất cả những ai đã vỡ được 20 mẫu ruộng và tập-trung được 10 dân đinh. Đặc-sắc nhất là Sắc-dụ năm 1840 bắt-buộc các đại-điền-chủ phải cắt 1/3 điền-sản bỏ vào công-điền; Sắc-dụ tiến-bộ này tiếc thay chỉ được áp dụng một phần ở Gia-định rồi sau lại bị đình-chỉ vì triều-đình còn bận đối-phó với những rắc-rối chính-trị phía Cao-miên. Các lãnh-tụ nhà Nguyễn đã thấy rõ những tương-quan hỗ-tương giữa kinh-tế và xã-hội; tình-trạng bất-an của dân-chúng bắt nguồn từ sự nghèo đói, từ việc nông-dân thiếu ruộng cày, từ sự áp-bức của những quan-lại bất-nhân, từ sự bóc-lột dã-man của cường-hào ác-bá",
+#     ),
+#     (
+#         "Mặt trận giải phóng Palestine một mực chống lại đề nghị ấy, âm mưu ám sát Hussein, quốc vương Jordanie, người chủ hòa, và Hussein đem quân đàn áp dữ dội Mặt trận. Vụ này Palestine gọi là vụ Tháng chin đen.",
+#         "Tổ chức giải phóng Palestine một mực chống lại đề nghị ấy, âm mưu ám sát Hussein, quốc vương Jordanie, người chủ hòa, và Hussein đem quân đàn áp dữ dội Tổ chức giải phóng Palestine. Vụ này Palestine gọi là vụ Tháng chín đen.",
 #     ),
 # ]
 
