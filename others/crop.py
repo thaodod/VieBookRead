@@ -1,5 +1,6 @@
 import re
 import Levenshtein
+import math
 
 MAX_ATT = 4
 
@@ -118,7 +119,7 @@ def find_best_match(short_seq, long_seq):
 
     best_ratio = 0
     window_size = int(min(short_len, long_len) * 0.8)
-    best_start = 2
+    best_start = math.ceil(min(short_len, long_len) * 0.15)
     best_end = window_size
 
     # Slide a window of size similar to short_seq over long_seq
