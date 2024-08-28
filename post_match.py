@@ -1,11 +1,4 @@
-# POST matching and text correction by LM
-# remove invalid
-# remove skip string with single 1 alphaletter (but keep number)
-# checking spelling for skip/not_relevant/not_found/intact
-# if text is spelling correct already, we left them intact,
-# else, we correct spelling by LLM with hint that the language is could be in Vietnamese, English, French, Chinese
-# and also given an nearby paragraph (on the same page) which is correct/perfect if available.
-
+# POST spelling correction by Sonnet 3.5
 
 import argparse
 import os
@@ -13,9 +6,7 @@ import glob
 
 import json
 import multiprocessing as mp
-from util.lm_util import is_spelling_correct, fix_spelling
-from util.count_token import has_chinese
-from thefuzz import fuzz
+from others.spell_correct_sonnet import correct
 
 
 def load_json(file_path):
@@ -32,15 +23,9 @@ def process_json(args, js_path):
     js_basename = os.path.basename(js_path)
 
     para_list = load_json(js_path)
-    nearby = []
 
     for para in para_list:
         status = para["status"]
-        if status == "perfect":
-            nearby.append(para["content"])
-
-        if status == "corrected":
-            nearby.append(para["content_"])
 
     for para in para_list:
         status = para["status"]
@@ -48,31 +33,26 @@ def process_json(args, js_path):
             continue
 
         para_text = para["content"]
-        if status == "skip" and len(para_text.strip()) < 10:
-            para["status_post"] = "skip"
+        if len(para_text.strip()) < 10 or len(para_text.strip()) > 550:
+            # skip spell correct for too short or too long.
             continue
 
-        if has_chinese(para_text):
-            para["status_post"] = "skip"
-            # with chinese, often hallucination, so skip
+        s_score = para.get("search-sco", [None])[0] if para.get("search-sco") else None
+        if s_score is not None and s_score >= 90:
+            # skip as already "good"
             continue
 
-        if is_spelling_correct(para_text):
-            para["status_post"] = "intact"
-            continue
+        para_modified = correct(para_text)
 
-        nearby = [
-            seq
-            for seq in nearby
-            if fuzz.partial_ratio(seq.lower(), para_text.lower()) > 70
-        ]
-        para_modified = fix_spelling(para_text, " ".join(nearby))
         if para_modified == para_text:
-            para["status_post"] = "intact"
+            para["status_p"] = "intact"
             continue
-        
-        para["status_post"] = "modified"
-        para["content_spell"] = para_modified
+        elif para_modified is False:
+            para["status_p"] = "intact"
+            continue
+        else:
+            para["status_p"] = "modified"
+            para["content_s"] = para_modified
 
     if not os.path.exists(args.o):
         os.makedirs(args.o, exist_ok=True)
@@ -94,7 +74,7 @@ def main():
     json_paths = glob.glob(os.path.join(args.json_dir, "*.json"))
 
     # Use multiprocessing to process JSON files in parallel
-    with mp.Pool(processes=mp.cpu_count() - 4) as pool:
+    with mp.Pool(processes=mp.cpu_count() - 12) as pool:
         pool.starmap(
             process_json,
             [(args, js_path) for js_path in json_paths],
