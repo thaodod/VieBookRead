@@ -35,12 +35,12 @@ def process_json(args, js_path):
         para_text = para["content"]
         if len(para_text.strip()) < 10 or len(para_text.strip()) > 550:
             # skip spell correct for too short or too long.
-            continue
+            continue # later, at final, just get 'original'
 
         s_score = para.get("search-sco", [None])[0] if para.get("search-sco") else None
         if s_score is not None and s_score >= 90:
             # skip as already "good"
-            continue
+            continue # later, at final, just get 'original'
 
         para_modified = correct(para_text)
 
