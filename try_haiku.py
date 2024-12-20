@@ -40,7 +40,7 @@ Please combine them for a fuller sequence with accurate diacritic marks. Answer 
 
 LOCATION = "us-central1"  # or "europe-west4"
 
-client = AnthropicVertex(region=LOCATION, project_id="***REMOVED***")
+client = AnthropicVertex(region=LOCATION, project_id="REPLACEMENT_STRING")
 m_name = "claude-3-haiku@20240307"
 
 for i in range(len(prompt)):

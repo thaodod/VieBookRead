@@ -4,7 +4,7 @@ import re
 
 LOCATION = "us-east5"  # or "europe-west4"
 
-client = AnthropicVertex(region=LOCATION, project_id="***REMOVED***")
+client = AnthropicVertex(region=LOCATION, project_id="REPLACEMENT_STRING")
 m_name = "claude-3-5-sonnet@20240620"
 
 

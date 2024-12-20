@@ -1,7 +1,7 @@
 from openai import OpenAI
 
 client = OpenAI(
-    api_key="***REMOVED***",
+    api_key="REPLACEMENT_STRING",
 )
 
 

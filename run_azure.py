@@ -71,7 +71,7 @@ def main():
     args = parser.parse_args()
     # Your Azure Form Recognizer endpoint and API key
     endpoint = "https://viet121.cognitiveservices.azure.com/"
-    key = "***REMOVED***"
+    key = "REPLACEMENT_STRING"
     credential = AzureKeyCredential(key)
     d_a_client = DocumentIntelligenceClient(endpoint, credential)
 

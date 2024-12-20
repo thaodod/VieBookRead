@@ -3,7 +3,7 @@ from util.count_token import count_words
 from thefuzz import fuzz
 
 client = OpenAI(
-    api_key="***REMOVED***",
+    api_key="REPLACEMENT_STRING",
 )
 
 

@@ -7,10 +7,10 @@ from anthropic import AnthropicVertex, APIError
 from util.lm_util import str_gap, count_words, visual_similar
 from thefuzz import fuzz
 
-claude_client = AnthropicVertex(region="us-central1", project_id="***REMOVED***")
+claude_client = AnthropicVertex(region="us-central1", project_id="REPLACEMENT_STRING")
 
 open_client = OpenAI(
-    api_key="***REMOVED***",
+    api_key="REPLACEMENT_STRING",
 )
 
 

@@ -11,7 +11,7 @@ from PIL import Image
 import io
 
 # Replace with your Google Cloud project ID and location
-PROJECT_ID = "***REMOVED***"
+PROJECT_ID = "REPLACEMENT_STRING"
 LOCATION = "us"
 PROCESSOR_ID = "fa80821cbaf0aa18"
 
